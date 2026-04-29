@@ -1,4 +1,4 @@
-node_modules
-vendor
-resources/dist
+/node_modules/
+/vendor/
+/resources/dist/
 .phpunit.result.cache
