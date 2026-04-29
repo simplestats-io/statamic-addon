@@ -1,0 +1,42 @@
+{
+    "name": "simplestats-io/statamic-addon",
+    "description": "SimpleStats analytics dashboard for Statamic",
+    "type": "statamic-addon",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "SimpleStatsIo\\StatamicAddon\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "SimpleStatsIo\\StatamicAddon\\Tests\\": "tests"
+        }
+    },
+    "require": {
+        "php": "^8.2",
+        "guzzlehttp/guzzle": "^7.5",
+        "statamic/cms": "^6.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.8"
+    },
+    "config": {
+        "allow-plugins": {
+            "pixelfear/composer-dist-plugin": true
+        }
+    },
+    "extra": {
+        "statamic": {
+            "name": "SimpleStats",
+            "description": "Visitor, revenue and source analytics powered by simplestats.io"
+        },
+        "laravel": {
+            "providers": [
+                "SimpleStatsIo\\StatamicAddon\\ServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
