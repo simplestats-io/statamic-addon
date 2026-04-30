@@ -62,6 +62,8 @@ import VisitorsChart from './VisitorsChart.vue';
 import RevenueChart from './RevenueChart.vue';
 import GroupedTable from './GroupedTable.vue';
 
+const inFlightFetches = new Map();
+
 export default {
     components: { StatsOverview, VisitorsChart, RevenueChart, GroupedTable },
 
@@ -132,8 +134,18 @@ export default {
             const requestId = ++this.requestId;
             this.loading = true;
             this.error = null;
+
+            const key = this.endpoint + '?' + new URLSearchParams(this.params).toString();
+            let promise = inFlightFetches.get(key);
+            if (!promise) {
+                promise = this.$axios.get(this.endpoint, { params: this.params })
+                    .then(r => r.data)
+                    .finally(() => inFlightFetches.delete(key));
+                inFlightFetches.set(key, promise);
+            }
+
             try {
-                const { data } = await this.$axios.get(this.endpoint, { params: this.params });
+                const data = await promise;
                 if (requestId !== this.requestId) return;
                 this.stats = data?.stats || null;
                 this.grouped = data?.grouped || {};
