@@ -39,6 +39,14 @@
                 :loading="loading"
             />
 
+            <active-filters
+                class="span-6"
+                :active="drilldowns"
+                :grouped="grouped"
+                :groups="groupedConfig"
+                @clear="clearDrilldown"
+            />
+
             <grouped-table
                 v-for="g in groupedConfig"
                 :key="g.type"
@@ -51,6 +59,8 @@
                 :range-type="rangeType"
                 :endpoint-template="endpointGroupedTemplate"
                 :params="params"
+                :active-drilldown="drilldowns[g.type] ?? null"
+                @toggle-filter="(typeId) => toggleDrilldown(g.type, typeId)"
             />
         </div>
     </div>
@@ -61,21 +71,54 @@ import StatsOverview from './StatsOverview.vue';
 import VisitorsChart from './VisitorsChart.vue';
 import RevenueChart from './RevenueChart.vue';
 import GroupedTable from './GroupedTable.vue';
+import ActiveFilters from './ActiveFilters.vue';
 
 const inFlightFetches = new Map();
 
+const DRILLDOWN_KEYS = [
+    'track_referer', 'track_source', 'track_medium', 'track_campaign',
+    'track_term', 'track_content', 'location_country', 'location_region',
+    'location_city', 'device_type', 'device_platform', 'device_browser',
+    'page_entry', 'custom_event_name',
+];
+
+function parseInitialFilters(source) {
+    // Statamic CP strips the query string from the page URL via
+    // Statamic::nonInertiaPageData(), so window.location.search is empty by
+    // the time Vue mounts. The dashboard view passes request()->query()
+    // server-side via the initial-filters prop instead.
+    const get = (key) => {
+        const value = source?.[key];
+        return value === undefined ? null : value;
+    };
+    const drilldowns = {};
+    for (const key of DRILLDOWN_KEYS) {
+        const value = get(key);
+        if (value === null || value === '') continue;
+        drilldowns[key] = /^-?\d+$/.test(value) ? parseInt(value, 10) : value;
+    }
+    return {
+        preset: get('preset') || 'last_7_days',
+        comparison: get('comparison') || '0',
+        drilldowns,
+    };
+}
+
 export default {
-    components: { StatsOverview, VisitorsChart, RevenueChart, GroupedTable },
+    components: { StatsOverview, VisitorsChart, RevenueChart, GroupedTable, ActiveFilters },
 
     props: {
         endpoint: { type: String, required: true },
         endpointGroupedTemplate: { type: String, required: true },
+        initialFilters: { type: Object, default: () => ({}) },
     },
 
     data() {
+        const initial = parseInitialFilters(this.initialFilters);
         return {
-            preset: 'last_7_days',
-            comparison: '0',
+            preset: initial.preset,
+            comparison: initial.comparison,
+            drilldowns: initial.drilldowns,
             stats: null,
             grouped: {},
             loading: false,
@@ -101,10 +144,10 @@ export default {
                 { value: 'year', label: 'Year over year' },
             ],
             groupedConfig: [
-                { type: 'track_referer', heading: 'Top Referrers', gradient: '139, 92, 246' },
-                { type: 'track_source', heading: 'Top Sources', gradient: '99, 102, 241' },
-                { type: 'location_country', heading: 'Top Countries', gradient: '16, 185, 129' },
-                { type: 'page_entry', heading: 'Entry Pages', gradient: '14, 165, 233' },
+                { type: 'track_referer', heading: 'Top Referrers', label: 'Referer', gradient: '139, 92, 246' },
+                { type: 'track_source', heading: 'Top Sources', label: 'Source', gradient: '99, 102, 241' },
+                { type: 'location_country', heading: 'Top Countries', label: 'Country', gradient: '16, 185, 129' },
+                { type: 'page_entry', heading: 'Entry Pages', label: 'Entry Page', gradient: '14, 165, 233' },
             ],
         };
     },
@@ -116,6 +159,10 @@ export default {
         params() {
             const p = { preset: this.preset };
             if (this.comparison !== '0') p.comparison = this.comparison;
+            for (const [key, value] of Object.entries(this.drilldowns)) {
+                if (value === null || value === '' || value === undefined) continue;
+                p[key] = value;
+            }
             return p;
         },
     },
@@ -123,6 +170,7 @@ export default {
     watch: {
         preset() { this.fetch(); },
         comparison() { this.fetch(); },
+        drilldowns: { handler() { this.fetch(); }, deep: true },
     },
 
     mounted() {
@@ -130,7 +178,36 @@ export default {
     },
 
     methods: {
+        toggleDrilldown(type, typeId) {
+            // -1 represents NULL/Direct/Unknown rows on the API side (TRACK_ORGANIC).
+            const id = typeId ?? -1;
+            const next = { ...this.drilldowns };
+            if (String(next[type] ?? '') === String(id)) {
+                delete next[type];
+            } else {
+                next[type] = id;
+            }
+            this.drilldowns = next;
+        },
+
+        clearDrilldown(type) {
+            const next = { ...this.drilldowns };
+            delete next[type];
+            this.drilldowns = next;
+        },
+
+        updateUrl() {
+            if (typeof window === 'undefined') return;
+            const query = new URLSearchParams(this.params).toString();
+            const newUrl = window.location.pathname + (query ? '?' + query : '');
+            if (newUrl !== window.location.pathname + window.location.search) {
+                window.history.replaceState({}, '', newUrl);
+            }
+        },
+
         async fetch() {
+            this.updateUrl();
+
             const requestId = ++this.requestId;
             this.loading = true;
             this.error = null;

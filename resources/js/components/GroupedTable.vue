@@ -1,6 +1,19 @@
 <template>
     <div>
-        <div class="simplestats-card-heading">{{ heading }}</div>
+        <div class="simplestats-card-heading">
+            {{ heading }}
+            <span v-if="activeRowName" class="simplestats-heading-chip">
+                Filtered: <strong>{{ activeRowName }}</strong>
+                <button
+                    type="button"
+                    class="simplestats-chip-clear"
+                    title="Clear filter"
+                    @click="$emit('toggle-filter', activeDrilldown)"
+                >
+                    &times;
+                </button>
+            </span>
+        </div>
         <div v-if="(loading || sortLoading) && !rows.length" class="simplestats-empty">
             <span class="simplestats-spinner"></span>
         </div>
@@ -58,8 +71,15 @@
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="row in displayedRows" :key="row.type_id ?? row.name" :style="rowStyle(row)">
-                    <td :title="row.name">{{ truncate(row.name) }}</td>
+                <tr
+                    v-for="row in displayedRows"
+                    :key="row.type_id ?? row.name"
+                    :class="{ 'is-active-drilldown': isActiveRow(row) }"
+                    :style="rowStyle(row)"
+                >
+                    <td :title="row.name" class="simplestats-clickable-name" @click="$emit('toggle-filter', row.type_id ?? -1)">
+                        {{ truncate(row.name) }}
+                    </td>
                     <td v-if="hasField('visitors')" class="num">
                         <div>{{ formatInt(row.visitors) }}</div>
                         <div v-if="trendBadge(row, 'visitors')" class="simplestats-trend-badge" :style="trendBadge(row, 'visitors').style">{{ trendBadge(row, 'visitors').text }}</div>
@@ -100,7 +120,10 @@ export default {
         loading: { type: Boolean, default: false },
         endpointTemplate: { type: String, required: true },
         params: { type: Object, default: () => ({}) },
+        activeDrilldown: { type: [String, Number], default: null },
     },
+
+    emits: ['toggle-filter'],
 
     data() {
         return {
@@ -139,6 +162,16 @@ export default {
         },
         activeUsersLabel() {
             return { weeks: 'WAU', months: 'MAU' }[this.rangeType] || 'DAU';
+        },
+        activeRowName() {
+            if (this.activeDrilldown === null || this.activeDrilldown === undefined) return null;
+            for (const row of this.rows) {
+                const rowId = row.type_id ?? -1;
+                if (String(rowId) === String(this.activeDrilldown)) {
+                    return row.name ?? `#${this.activeDrilldown}`;
+                }
+            }
+            return `#${this.activeDrilldown}`;
         },
     },
 
@@ -196,6 +229,11 @@ export default {
         truncate(str, max = 30) {
             if (!str) return '';
             return str.length > max ? str.slice(0, max - 1) + '…' : str;
+        },
+        isActiveRow(row) {
+            if (this.activeDrilldown === null || this.activeDrilldown === undefined) return false;
+            const rowId = row.type_id ?? -1;
+            return String(rowId) === String(this.activeDrilldown);
         },
         rowStyle(row) {
             if (!this.maxVisitors) return {};

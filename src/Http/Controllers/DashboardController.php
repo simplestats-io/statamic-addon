@@ -9,6 +9,28 @@ use SimpleStatsIo\StatamicAddon\SimplestatsApiClient;
 
 class DashboardController extends Controller
 {
+    /**
+     * Drilldown filter keys forwarded to the SimpleStats API. Mirrors the SaaS
+     * StatsFilterRequest and lets users stack multiple filters at once
+     * (e.g. track_referer=54 AND page_entry=12).
+     */
+    public const DRILLDOWN_KEYS = [
+        'track_referer',
+        'track_source',
+        'track_medium',
+        'track_campaign',
+        'track_term',
+        'track_content',
+        'location_country',
+        'location_region',
+        'location_city',
+        'device_type',
+        'device_platform',
+        'device_browser',
+        'page_entry',
+        'custom_event_name',
+    ];
+
     public function __construct(protected SimplestatsApiClient $client) {}
 
     public function index()
@@ -42,9 +64,21 @@ class DashboardController extends Controller
         $preset = $request->string('preset')->toString() ?: 'last_7_days';
         $comparison = $request->string('comparison')->toString();
 
-        return array_filter([
+        $filters = array_filter([
             'preset' => $preset,
             'comparison' => $comparison !== '' && $comparison !== '0' ? $comparison : null,
         ]);
+
+        foreach (self::DRILLDOWN_KEYS as $key) {
+            $value = $request->input($key);
+
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            $filters[$key] = $value;
+        }
+
+        return $filters;
     }
 }

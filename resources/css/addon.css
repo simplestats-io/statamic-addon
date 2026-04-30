@@ -231,3 +231,79 @@
 .simplestats-error button:hover {
     background: #991b1b;
 }
+
+.simplestats-active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    grid-column: 1 / -1;
+}
+
+.simplestats-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    background: rgba(99, 102, 241, 0.12);
+    color: #4338ca;
+    font-size: 0.8rem;
+    font-weight: 500;
+    line-height: 1.25;
+}
+
+.simplestats-chip-clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 9999px;
+    background: rgba(99, 102, 241, 0.2);
+    color: #4338ca;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    line-height: 1;
+    padding: 0;
+    font-size: 0.875rem;
+}
+
+.simplestats-chip-clear:hover {
+    background: rgba(99, 102, 241, 0.35);
+}
+
+.simplestats-card-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.simplestats-heading-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    background: rgba(99, 102, 241, 0.12);
+    color: #4338ca;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.25;
+}
+
+.simplestats-clickable-name {
+    cursor: pointer;
+}
+
+.simplestats-clickable-name:hover {
+    color: #4338ca;
+    text-decoration: underline;
+}
+
+.simplestats-table tr.is-active-drilldown td {
+    font-weight: 600;
+    color: #4338ca;
+}
