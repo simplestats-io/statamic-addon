@@ -1,0 +1,55 @@
+name: Build and publish dist on tag
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build dist for ${{ github.ref_name }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 1
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, intl
+          coverage: none
+
+      - name: Install composer deps
+        run: composer install --no-dev --no-interaction --no-progress
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Point @statamic/cms to vendor path for CI
+        run: npm pkg set 'dependencies.@statamic/cms=file:./vendor/statamic/cms/resources/dist-package'
+
+      - name: Install npm deps
+        run: npm install --no-audit --no-fund
+
+      - name: Build assets
+        run: npm run build
+
+      - name: Commit dist and force-update tag
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add -f resources/dist
+          git commit -m "chore(build): publish dist for ${TAG}"
+          git tag -f "${TAG}"
+          git push --force origin "refs/tags/${TAG}"
