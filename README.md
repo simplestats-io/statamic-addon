@@ -4,6 +4,7 @@
 [![Tests](https://github.com/simplestats-io/statamic-addon/actions/workflows/run-tests.yml/badge.svg?branch=main)](https://github.com/simplestats-io/statamic-addon/actions/workflows/run-tests.yml)
 [![Fix PHP code style issues](https://github.com/simplestats-io/statamic-addon/actions/workflows/fix-php-code-style-issues.yml/badge.svg?branch=main)](https://github.com/simplestats-io/statamic-addon/actions/workflows/fix-php-code-style-issues.yml)
 [![License](https://img.shields.io/packagist/l/simplestats-io/statamic-addon.svg?style=flat-square)](https://packagist.org/packages/simplestats-io/statamic-addon)
+[![Laravel Compatibility](https://badge.laravel.cloud/badge/simplestats-io/statamic-addon)](https://packagist.org/packages/simplestats-io/statamic-addon)
 
 The official [Statamic v6](https://statamic.com) addon for [SimpleStats.io](https://simplestats.io). View your analytics directly inside the Statamic Control Panel: visitors, registrations, revenue, top referrers, top sources, and top countries.
 
