@@ -27,7 +27,7 @@ composer require simplestats-io/statamic-addon
 Optionally publish the config file:
 
 ```bash
-php artisan vendor:publish --tag="simplestats-config"
+php artisan simplestats-statamic:install
 ```
 
 Add your API token to `.env`:

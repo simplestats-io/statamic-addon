@@ -2,12 +2,17 @@
 
 namespace SimpleStatsIo\StatamicAddon;
 
+use SimpleStatsIo\StatamicAddon\Console\InstallCommand;
 use Statamic\Facades\CP\Nav;
 use Statamic\Providers\AddonServiceProvider;
 
 class ServiceProvider extends AddonServiceProvider
 {
     protected $viewNamespace = 'simplestats';
+
+    protected $commands = [
+        InstallCommand::class,
+    ];
 
     protected $routes = [
         'cp' => __DIR__.'/../routes/cp.php',
