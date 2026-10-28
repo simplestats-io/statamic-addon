@@ -1,0 +1,82 @@
+name: Release
+
+# Started by hand: gh workflow run release.yml -f version=vX.Y.Z
+# The built dist has to be part of the tagged commit, and Packagist treats a
+# published tag as immutable, so the tag is created once on the dist commit and
+# never moved. The release is left as a draft: publishing it by hand is what
+# triggers update-changelog.yml (releases created with GITHUB_TOKEN do not).
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, e.g. v1.2.1'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build dist and tag ${{ inputs.version }}
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Validate version
+        run: |
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Version must look like v1.2.3, got '$TAG'" >&2
+            exit 1
+          fi
+
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Ensure tag does not exist yet
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null; then
+            echo "Tag ${TAG} already exists" >&2
+            exit 1
+          fi
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, intl
+          coverage: none
+
+      - name: Install composer deps
+        run: composer install --no-dev --no-interaction --no-progress
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Point @statamic/cms to vendor path for CI
+        run: npm pkg set 'dependencies.@statamic/cms=file:./vendor/statamic/cms/resources/dist-package'
+
+      - name: Install npm deps
+        run: npm install --no-audit --no-fund
+
+      - name: Build assets
+        run: npm run build
+
+      - name: Commit dist and push tag
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add -f resources/dist
+          git commit -m "chore(build): publish dist for ${TAG}"
+          git tag "${TAG}"
+          git push origin "refs/tags/${TAG}"
+
+      - name: Create draft release
+        run: gh release create "${TAG}" --draft --verify-tag --title "${TAG}" --generate-notes
