@@ -2,6 +2,18 @@
 
 All notable changes to `statamic-addon` will be documented in this file.
 
+## v1.2.1 - 2026-10-28
+
+### Fixed
+
+- v1.2.0 was published without the built Control Panel assets. Please update to v1.2.1.
+
+### Added
+
+- New `php artisan simplestats-statamic:install` command: publishes the config file and asks whether you would like to star the repo on GitHub.
+
+**Full Changelog**: https://github.com/simplestats-io/statamic-addon/compare/v1.1.1...v1.2.1
+
 ## v1.2.0 - 2026-10-27
 
 ### Added
